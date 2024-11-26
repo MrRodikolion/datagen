@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карточки классов</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #card-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .card {
+            max-width: 25%;
+            width: calc(33.333% - 40px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        #add-card-form {
+            margin-top: 20px;
+        }
+
+        #file-input-container {
+            margin-bottom: 10px;
+        }
+
+        .file-input {
+            margin-right: 10px;
+        }
+
+        .m-y {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Генератор датасета для yolo</h1>
+    <h1 id="per"></h1>
+
+    <!-- Форма для добавления новой карточки -->
+    <form id="add-card-form">
+        <input class="m-y" type="text" id="class-name-input" placeholder="Введите название класса">
+        <div id="file-input-container"></div>
+        <button class="m-y" type="submit">Добавить класс</button>
+    </form>
+    <!-- Кнопка отправки на сервер -->
+    <input class="m-y" type="number" id="num-gen-input" placeholder="Сгенерировать картинок на класс">
+    <button class="m-y" id="send-to-server">Отправить на сервер</button>
+    <!-- Список карточек -->
+    <div id="card-list"></div>
+
+    <script>
+        // Функция для создания поля ввода файла
+        function createFileInput() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.multiple = true;
+            input.className='m-y';
+            return input;
+        }
+
+        // Функция для добавления новой карточки
+        function addCard(className) {
+            const card = document.createElement('div');
+            card.className = 'card';
+
+            // Создаем элементы карточки
+            const nameElement = document.createElement('h3');
+            nameElement.textContent = className;
+
+            const fileContainer = document.createElement('div');
+            fileContainer.id = 'file-container-' + className;
+
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'image-container';
+
+            card.appendChild(nameElement);
+            // card.appendChild(fileContainer);
+            // card.appendChild(imgContainer);
+
+            return card;
+        }
+
+        // Функция для отображения списка карточек
+        function renderCardList() {
+            const list = document.getElementById('card-list');
+            list.innerHTML = ''; // Очищаем список перед добавлением новых карточек
+
+            // Здесь можно добавить логику для получения данных из сервера
+            // Например, используя fetch или axios
+            // const cardsData = await fetchDataFromServer();
+            // cardsData.forEach(card => list.appendChild(addCard(card.className)));
+
+            // Для примера добавляем две карточки
+        }
+
+        // Функция для отображения файлов в карточке
+        function renderFiles(className, files) {
+            const fileContainer = document.getElementById('file-container-' + className);
+            fileContainer.innerHTML = '';
+
+            Array.prototype.forEach.call(files, file => {
+                const img = document.createElement('img');
+                // img.src = URL.createObjectURL(file);
+
+                const reader = new FileReader();
+
+                reader.addEventListener(
+                    "load",
+                    () => {
+                        // convert image file to base64 string
+                        img.src = reader.result;
+                    },
+                    false,
+                );
+
+                if (file) {
+                    reader.readAsDataURL(file);
+                }
+
+
+                fileContainer.appendChild(img);
+            });
+        }
+
+        // Обработчик отправки формы
+        document.getElementById('add-card-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const className = document.getElementById('class-name-input').value.trim();
+
+            if (className) {
+                const card = addCard(className);
+                document.getElementById('card-list').appendChild(card);
+
+                // Добавляем обработчик для выбора файлов
+                const fileInput = createFileInput();
+                fileInput.addEventListener('change', function (e) {
+                    renderFiles(className, e.target.files);
+                });
+
+                card.appendChild(fileInput);
+
+                // Создаем контейнер для файлов
+                const fileContainer = document.createElement('div');
+                fileContainer.id = 'file-container-' + className;
+
+                card.appendChild(fileContainer);
+
+
+                document.getElementById('class-name-input').value = '';
+            }
+        });
+
+        // Обработчик отправки на сервер
+        document.getElementById('send-to-server').addEventListener('click', function () {
+            const cardsData = Array.from(document.querySelectorAll('.card')).map(card => ({
+                name: card.querySelector('h3').textContent,
+                files: Array.from(card.querySelectorAll('img')).map(img => img.src)
+            }));
+            const tosend = {data: cardsData, togen: document.getElementById('num-gen-input').value.trim()};
+
+            console.log(JSON.stringify(tosend));
+            try {
+                const response = fetch('/upload_cards', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(tosend),
+                });
+
+                // if (!response.ok) {
+                //     throw new Error(`HTTP error! status: ${response.status}`);
+                // }
+
+                // const result = response.json();
+                // console.log('Данные успешно отправлены:', result);
+
+                const progress = document.getElementById("per");
+                var pech = 0;
+                var interid = setInterval(function() {
+                    fetch('/getp')
+                        .then(response => {
+                            // Проверка статуса ответа
+                            // if (!response.ok) {
+                            //     throw new Error(`HTTP error! status: ${response.status}`);
+                            // }
+
+                            return response.json();
+                        })
+                        .then(data => {
+                            // Обработка полученных данных
+                            console.log(data);
+                            if (data.pech == -1) {
+                                progress.innerHTML = 'generated';
+                                clearInterval(interid);
+                                return
+                            }
+                            
+                            progress.innerHTML = `${data.pech}/${data.pechmax}`;
+                            
+                        })
+                        .catch(error => {
+                            console.error('Ошибка:', error);
+                        });
+                }, 1000)
+
+            } catch (error) {
+                console.error('Ошибка при отправке данных:', error);
+            }
+        });
+
+        // Инициализация
+        renderCardList();
+
+    </script>
+</body>
+
+</html>
