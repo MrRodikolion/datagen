@@ -6,3 +6,4 @@ selenium
 bs4
 pillow
 opencv-python
+webdriver_manager
