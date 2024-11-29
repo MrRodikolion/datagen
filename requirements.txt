@@ -1,0 +1,8 @@
+webbrowser
+yaml
+flask
+requests
+selenium
+bs4
+pillow
+opencv-python
