@@ -1,9 +1,7 @@
-webbrowser
-yaml
-flask
+PyYAML
+Flask
 requests
 selenium
-bs4
-pillow
-opencv-python
-webdriver_manager
+beautifulsoup4
+Pillow
+webdriver-manager
